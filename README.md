@@ -63,6 +63,17 @@ final_call = cora.wait_for_terminal(v, call.id)
 
 `TERMINAL_STATUSES` enumerates the statuses that stop polling.
 
+Need to inspect available numbers before placing a call? Use the phone number helpers:
+
+```python
+numbers = cora.list_phone_numbers()
+for pn in numbers:
+    print(pn.id, pn.number)
+
+first = numbers[0]
+details = cora.get_phone_number(first.id)
+```
+
 ## Custom Voices & Transcribers
 
 Voices are exposed as `VoiceProfile` instances so you can either pass them directly to `create_assistant` or expand them into raw payloads when you need to tweak attributes on the fly:

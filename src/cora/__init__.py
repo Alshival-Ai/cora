@@ -12,6 +12,7 @@ from .calls import (
     wait_for_terminal,
     watch_call,
 )
+from .phone_numbers import get_phone_number, list_phone_numbers
 from .transcribers import deepgram_transcribers, Deepgram
 from .voices import eleven_labs_voices, openai_voices, azure_voices
 from .vapi_client import VapiConnector
@@ -31,4 +32,6 @@ __all__ = [
     "openai_voices",
     "azure_voices",
     "VapiConnector",
+    "list_phone_numbers",
+    "get_phone_number",
 ]
