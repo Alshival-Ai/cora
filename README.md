@@ -8,6 +8,12 @@
 pip install -e .
 ```
 
+Or install directly from GitHub:
+
+```bash
+pip install git+https://github.com/Alshival-Ai/cora.git
+```
+
 The package expects a `.env` file (or exported env vars) containing at least `VAPI_API_KEY`. When `VapiConnector()` is instantiated, it loads the environment automatically.
 
 ```
