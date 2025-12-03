@@ -74,6 +74,35 @@ first = numbers[0]
 details = cora.get_phone_number(first.id)
 ```
 
+## Text Chats
+
+```python
+assistant = cora.create_assistant(
+    name="patient-123",
+    system_prompt="You are a helpful care coordinator…",
+    voice=cora.openai_voices.nova,
+    transcriber=cora.deepgram_transcribers.custom(lang="en"),
+    analysis_plan=cora.pass_fail_plan(),
+    first_message="Hi! Just checking in about your upcoming appointment.",
+    connector=v,
+)
+
+# Kick off a new SMS thread (send literal text)
+chat = cora.chat(
+    assistant_id=assistant.id,
+    phone_number_id="pn_abc123",
+    customer="+1 (954) 320-0121",
+    message="Hi! Just checking in about your upcoming appointment.",
+    use_llm_generated_message_for_outbound=False,  # deliver message verbatim
+    v=v,
+)
+print(chat.status, chat.id)
+```
+
+When you need the assistant/LLM to craft a response from the provided prompt (e.g., follow-up text generated from context), pass `use_llm_generated_message_for_outbound=True`. If you already know the exact text you want to deliver (most appointment reminders), keep it `False` so the string lands verbatim.
+
+`cora.chat` wraps `vapi.chats.create` with the SMS transport boilerplate. Provide `session_id="sess_..."` instead of `phone_number_id`/`customer` when continuing an existing thread, and pass `previous_chat_id` if you want to include the last transcript as additional context for the model.
+
 ## Custom Voices & Transcribers
 
 Voices are exposed as `VoiceProfile` instances so you can either pass them directly to `create_assistant` or expand them into raw payloads when you need to tweak attributes on the fly:
@@ -132,4 +161,4 @@ analysis_plan = pass_fail_plan(
 
 ## Credentials
 
-`cora.VapiConnector` automatically loads `.env` from the working directory (or accepts a `token=` / `env_path=` override). The connector exposes `.assistants`, `.calls`, and `.phone_numbers` exactly like the underlying Vapi SDK, so you can drop down to raw methods whenever you need finer control.
+`cora.VapiConnector` automatically loads `.env` from the working directory (or accepts a `token=` / `env_path=` override). The connector exposes `.assistants`, `.calls`, `.chats`, and `.phone_numbers` exactly like the underlying Vapi SDK, so you can drop down to raw methods whenever you need finer control.

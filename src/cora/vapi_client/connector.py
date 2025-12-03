@@ -97,5 +97,9 @@ class VapiConnector:
         return self._client.calls
 
     @property
+    def chats(self):
+        return self._client.chats
+
+    @property
     def phone_numbers(self):
         return self._client.phone_numbers
