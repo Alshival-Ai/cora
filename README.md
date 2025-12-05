@@ -26,6 +26,11 @@ The package expects a `.env` file (or exported env vars) containing at least `VA
 VAPI_API_KEY=sk_live_your_key
 ```
 
+You can optionally pin other defaults via environment variables:
+
+- `VAPI_MODEL_PROVIDER` – sets the model provider used by `cora.create_assistant` unless you pass `model_provider` explicitly (defaults to `openai`).
+- `VAPI_MODEL_NAME` – sets the model ID sent to Vapi (defaults to `gpt-4o-mini`). Override this to `gpt-4.1`, `gpt-5.1`, etc., without changing code.
+
 ## Quick Start
 
 ```python
