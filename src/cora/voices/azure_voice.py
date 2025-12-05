@@ -1,14 +1,30 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Mapping, Optional
 
 from .voice_profile import VoiceProfile
+from .utils import merge_voice_maps
+
+
+DEFAULT_AZURE_VOICES = {
+    "ximena": "es-ES-XimenaNeural",
+}
 
 
 class AzureVoice:
-    def __init__(self, provider: str = "azure") -> None:
+    def __init__(
+        self,
+        provider: str = "azure",
+        *,
+        additional_voices: Optional[Mapping[str, str]] = None,
+    ) -> None:
         self.provider = provider
-        self.ximena = self._profile("es-ES-XimenaNeural")
+        voice_map = merge_voice_maps(
+            defaults=DEFAULT_AZURE_VOICES,
+            additions=additional_voices,
+        )
+        for name, voice_id in voice_map.items():
+            setattr(self, name, self._profile(voice_id))
 
     def custom(
         self,

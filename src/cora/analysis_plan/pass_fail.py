@@ -37,6 +37,9 @@ def pass_fail_plan(
     *,
     rubric: str = DEFAULT_RUBRIC,
     evaluation_messages: Iterable[Mapping[str, str]] | None = None,
+    enabled: bool = True,
+    timeout_seconds: float | None = None,
+    min_messages_threshold: float | None = None,
 ) -> AnalysisPlan:
     """
     Build the AnalysisPlan + SuccessEvaluationPlan pair used by assistants.
@@ -49,8 +52,11 @@ def pass_fail_plan(
     )
 
     return AnalysisPlan(
+        min_messages_threshold=min_messages_threshold,
         success_evaluation_plan=SuccessEvaluationPlan(
             rubric=rubric,
             messages=messages,
+            enabled=enabled,
+            timeout_seconds=timeout_seconds,
         )
     )
