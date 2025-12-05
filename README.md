@@ -2,7 +2,11 @@
 
 `cora` is a small helper library that wraps the Vapi Server SDK with a few pragmatic utilities for building healthcare assistants. It bundles repeatable pieces—assistant creation, transcriber/voice presets, call lifecycle helpers, and credential management—so your app logic can stay focused on patient workflows.
 
-Why does it exist? Cora is the toolkit The Data Team at Alshival.Ai uses to build and maintain AI assistants across many client deployments. By keeping the integration code in this centralized repo, we stay resilient to Vapi API changes (we can patch things here before they break production bots) while sharing best practices, presets, and helpers across every project. In short, it gives us a stable foundation to manage multiple assistants without duplicating boilerplate in each app.
+Why does it exist? Cora is the toolkit The Data Team at [Alshival.Ai](https://alshival.ai) uses to build and maintain AI assistants across many client deployments. By keeping the integration code in this centralized repo, we stay resilient to Vapi API changes (we can patch things here before they break production bots) while sharing best practices, presets, and helpers across every project. In short, it gives us a stable foundation to manage multiple assistants without duplicating boilerplate in each app.
+
+<center>
+<img src="meta/brain2_black_with_background.png" width="35%"></img>
+</center>
 
 ## Installation
 
