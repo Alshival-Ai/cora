@@ -9,7 +9,7 @@ from ..vapi_client import VapiConnector
 from ..voices.voice_profile import VoiceProfile
 
 DEFAULT_MODEL_PROVIDER = os.getenv("VAPI_MODEL_PROVIDER", "openai")
-DEFAULT_MODEL_NAME = os.getenv("VAPI_MODEL_NAME", "gpt-4o-mini")
+DEFAULT_MODEL_NAME = os.getenv("VAPI_MODEL_NAME", "gpt-5.1")
 DEFAULT_TOOLS = [{"type": "endCall"}]
 
 VoiceInput = Union[VoiceProfile, Mapping[str, Any]]
