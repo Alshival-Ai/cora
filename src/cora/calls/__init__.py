@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import time
 from typing import Any, Dict, Generator, Optional, Union
@@ -95,18 +96,22 @@ def wait_for_terminal(
     timeout_seconds: int = 600,
     interval: float = 2.5,
     echo_messages: bool = True,
+    pandas: bool = False,
 ) -> Any:
     """
     Block until the call is terminal or the timeout expires. Optionally echo new
     messages for quick debugging. Returns the final call object as provided by
-    Vapi's SDK.
+    Vapi's SDK, or a pandas DataFrame row with the call payload when
+    ``pandas=True``.
     """
     deadline = time.time() + timeout_seconds
     seen_messages: set[str] = set()
     last_status: Optional[str] = None
+    final_call: Any = None
 
     while True:
         call_obj = v.calls.get(call_id)
+        final_call = call_obj
         status = getattr(call_obj, "status", None)
         if status != last_status:
             last_status = status
@@ -120,12 +125,16 @@ def wait_for_terminal(
                 seen_messages.add(key)
 
         if _is_terminal(call_obj, status=status):
-            return call_obj
+            break
 
         if time.time() > deadline:
-            return call_obj
+            break
 
         time.sleep(interval)
+
+    if pandas:
+        return _call_to_dataframe(final_call)
+    return final_call
 
 
 def watch_call(
@@ -178,3 +187,125 @@ def _is_terminal(call_obj: Any, *, status: Optional[str]) -> bool:
     if getattr(call_obj, "endedReason", None) is not None:
         return True
     return False
+
+
+def _call_to_dataframe(call_obj: Any):
+    try:
+        import pandas as pd
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise RuntimeError("pandas is required when `pandas=True` is passed to wait_for_terminal().") from exc
+
+    payload = _call_to_payload(call_obj)
+    if not payload:
+        return pd.DataFrame([{}])
+    return pd.DataFrame([payload])
+
+
+def _call_to_payload(call_obj: Any) -> Dict[str, Any]:
+    if call_obj is None:
+        return {}
+
+    analysis = getattr(call_obj, "analysis", None)
+    messages = getattr(call_obj, "messages", None) or []
+
+    customer = _safe_attr(call_obj, "customer", "customer_number", "customerNumber")
+    customer_number = None
+    if isinstance(customer, dict):
+        customer_number = customer.get("number") or customer.get("phoneNumber")
+    elif customer is not None:
+        customer_number = customer
+
+    payload: Dict[str, Any] = {
+        "call_id": _safe_attr(call_obj, "id", "call_id"),
+        "status": _safe_attr(call_obj, "status"),
+        "assistant_id": _safe_attr(call_obj, "assistant_id", "assistantId"),
+        "phone_number_id": _safe_attr(call_obj, "phone_number_id", "phoneNumberId"),
+        "customer_number": customer_number,
+        "created_at": _safe_attr(call_obj, "created_at", "createdAt"),
+        "updated_at": _safe_attr(call_obj, "updated_at", "updatedAt"),
+        "started_at": _safe_attr(call_obj, "started_at", "startedAt"),
+        "ended_at": _safe_attr(call_obj, "ended_at", "endedAt"),
+        "ended_reason": _safe_attr(call_obj, "ended_reason", "endedReason"),
+        "cost": _safe_attr(call_obj, "cost"),
+        "transcript": _safe_attr(call_obj, "transcript"),
+        "messages": _serialize_messages(messages),
+        "first_message": _safe_attr(call_obj, "first_message", "firstMessage"),
+        "metadata": _object_to_python(_safe_attr(call_obj, "metadata")),
+        "analysis_summary": _safe_attr(analysis, "summary"),
+        "analysis_success_evaluation": _object_to_python(
+            _safe_attr(analysis, "success_evaluation", "successEvaluation")
+        ),
+        "analysis_structured_data": _object_to_python(
+            _safe_attr(analysis, "structured_data", "structuredData")
+        ),
+        "analysis_structured_data_multi": _object_to_python(
+            _safe_attr(analysis, "structured_data_multi", "structuredDataMulti")
+        ),
+        "analysis_outcomes": _object_to_python(_safe_attr(analysis, "outcomes")),
+    }
+
+    return payload
+
+
+def _safe_attr(obj: Any, *names: str) -> Any:
+    if obj is None:
+        return None
+    for name in names:
+        if name is None:
+            continue
+        if hasattr(obj, name):
+            value = getattr(obj, name)
+            if value is not None:
+                return value
+    return None
+
+
+def _serialize_messages(messages: Any) -> Optional[str]:
+    if not messages:
+        return None
+
+    serialized = []
+    for message in messages:
+        if hasattr(message, "json"):
+            try:
+                serialized.append(message.json())
+                continue
+            except TypeError:
+                pass
+        serialized.append(_object_to_python(message))
+    try:
+        return json.dumps(serialized, default=str)
+    except TypeError:
+        return str(serialized)
+
+
+def _object_to_python(value: Any) -> Any:
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {k: _object_to_python(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_object_to_python(v) for v in value]
+    for attr in ("model_dump", "dict"):
+        if hasattr(value, attr):
+            method = getattr(value, attr)
+            try:
+                data = method()
+            except TypeError:
+                continue
+            return _object_to_python(data)
+    if hasattr(value, "__dict__"):
+        return {
+            k: _object_to_python(v)
+            for k, v in value.__dict__.items()
+            if not k.startswith("_") and not callable(v)
+        }
+    if hasattr(value, "json"):
+        try:
+            data = value.json()
+        except TypeError:
+            return str(value)
+        if isinstance(data, str):
+            return data
+        return _object_to_python(data)
+    return str(value)

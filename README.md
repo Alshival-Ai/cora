@@ -70,7 +70,13 @@ for snapshot in cora.watch_call(v, call_id=call.id):
 
 # or block until terminal:
 final_call = cora.wait_for_terminal(v, call.id)
+
+# pass pandas=True to get a single-row DataFrame for logging/reporting
+call_df = cora.wait_for_terminal(v, call.id, pandas=True)
 ```
+
+Passing `pandas=True` requires pandas to be installed; when enabled the helper
+returns a one-row DataFrame containing the final call payload.
 
 `TERMINAL_STATUSES` enumerates the statuses that stop polling.
 
