@@ -31,14 +31,21 @@ You can optionally pin other defaults via environment variables:
 - `VAPI_MODEL_PROVIDER` – sets the model provider used by `cora.create_assistant` unless you pass `model_provider` explicitly (defaults to `openai`).
 - `VAPI_MODEL_NAME` – sets the model ID sent to Vapi (defaults to `gpt-5.1`). Override this to `gpt-4.1`, `gpt-4o-mini`, etc., without changing code.
 
-To use Anthropic models instead of OpenAI, set:
+### Setting the model
+
+Set defaults in `.env` or your shell:
 
 ```
+# OpenAI (default)
+VAPI_MODEL_PROVIDER=openai
+VAPI_MODEL_NAME=gpt-5.1
+
+# Anthropic example
 VAPI_MODEL_PROVIDER=anthropic
-VAPI_MODEL_NAME=claude-3-5-sonnet-20240620  # or any Claude model available in your Vapi account
+VAPI_MODEL_NAME=claude-3-5-sonnet-20240620  # or another Claude model available in your Vapi account
 ```
 
-You can also override per-assistant call without touching env vars:
+Override per assistant when you need a one-off provider/model:
 
 ```python
 assistant = cora.create_assistant(
@@ -51,6 +58,8 @@ assistant = cora.create_assistant(
     connector=cora.VapiConnector(),
 )
 ```
+
+Ensure the chosen provider is configured in your Vapi project (API keys/allowlist) or the request will fail upstream.
 
 ## Quick Start
 
