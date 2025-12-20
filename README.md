@@ -30,6 +30,8 @@ You can optionally pin other defaults via environment variables:
 
 - `VAPI_MODEL_PROVIDER` – sets the model provider used by `cora.create_assistant` unless you pass `model_provider` explicitly (defaults to `openai`).
 - `VAPI_MODEL_NAME` – sets the model ID sent to Vapi (defaults to `gpt-5.1`). Override this to `gpt-4.1`, `gpt-4o-mini`, etc., without changing code.
+- `VAPI_PHONE_NUMBER_ID` – optional default phone number ID used by `cora.create_call` when you do not pass `phone_number_id`.
+- `VAPI_TOOL_IDS` – optional comma-separated list of tool IDs attached to assistants when `tool_ids` is not passed.
 
 ### Setting the model
 

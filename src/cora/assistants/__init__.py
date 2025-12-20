@@ -10,6 +10,11 @@ from ..voices.voice_profile import VoiceProfile
 
 DEFAULT_MODEL_PROVIDER = os.getenv("VAPI_MODEL_PROVIDER", "openai")
 DEFAULT_MODEL_NAME = os.getenv("VAPI_MODEL_NAME", "gpt-5.1")
+DEFAULT_TOOL_IDS = [
+    item.strip()
+    for item in (os.getenv("VAPI_TOOL_IDS", "")).split(",")
+    if item.strip()
+]
 DEFAULT_TOOLS = [{"type": "endCall"}]
 
 VoiceInput = Union[VoiceProfile, Mapping[str, Any]]
@@ -43,8 +48,9 @@ def create_assistant(
         "messages": [{"role": "system", "content": system_prompt}],
         "tools": list(tools or DEFAULT_TOOLS),
     }
-    if tool_ids:
-        model_payload["toolIds"] = list(tool_ids)
+    resolved_tool_ids = list(tool_ids) if tool_ids else list(DEFAULT_TOOL_IDS)
+    if resolved_tool_ids:
+        model_payload["toolIds"] = resolved_tool_ids
     if model_overrides:
         model_payload.update(model_overrides)
 

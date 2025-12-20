@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 from typing import Any, Dict, Generator, Optional, Union
@@ -17,6 +18,7 @@ __all__ = [
 ]
 
 TERMINAL_STATUSES = {"ended", "failed", "noAnswer", "busy", "canceled"}
+DEFAULT_PHONE_NUMBER_ID = os.getenv("VAPI_PHONE_NUMBER_ID")
 
 
 def normalize_phone(number: str) -> str:
@@ -37,7 +39,7 @@ Customer = Union[str, Dict[str, str]]
 def create_call(
     *,
     assistant_id: str,
-    phone_number_id: str,
+    phone_number_id: Optional[str] = None,
     customer: Customer,
     v: Optional[VapiConnector] = None,
 ) -> Any:
@@ -45,11 +47,16 @@ def create_call(
     Create a Vapi call for the given assistant + phone number combination.
     Accepts customer as either a str (+1…) or {"number": "+1…"} dict.
     """
+    resolved_phone_number_id = phone_number_id or DEFAULT_PHONE_NUMBER_ID
+    if not resolved_phone_number_id:
+        raise ValueError(
+            "phone_number_id is required; pass it explicitly or set VAPI_PHONE_NUMBER_ID in your environment."
+        )
     payload = _normalize_customer(customer)
     client = v or VapiConnector()
     return client.calls.create(
         assistant_id=assistant_id,
-        phone_number_id=phone_number_id,
+        phone_number_id=resolved_phone_number_id,
         customer=payload,
     )
 
