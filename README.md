@@ -76,11 +76,11 @@ analysis_plan = cora.pass_fail_plan()
 assistant = cora.create_assistant(
     name="patient-123",
     system_prompt="You are a helpful care coordinator…",
-    tool_ids=["mcp-tool-id", "ba39debb-885e-415b-9ed0-3e57f2642430"],
+    tool_ids=["mcp-tool-id", "ba39debb-885e-415b-9ed0-3e5n33m4m"],
     voice=voice,
     transcriber=transcriber,
     analysis_plan=analysis_plan,
-    first_message="Hola, soy Margori con Broward Health...",
+    first_message="Hola, soy Cora...",
     connector=v,
 )
 ```
