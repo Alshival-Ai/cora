@@ -30,8 +30,8 @@ You can optionally pin other defaults via environment variables:
 
 - `VAPI_MODEL_PROVIDER` – sets the model provider used by `cora.create_assistant` unless you pass `model_provider` explicitly (defaults to `openai`).
 - `VAPI_MODEL_NAME` – sets the model ID sent to Vapi (defaults to `gpt-5.1`). Override this to `gpt-4.1`, `gpt-4o-mini`, etc., without changing code.
-- `VAPI_PHONE_NUMBER_ID` – optional default phone number ID used by `cora.create_call` when you do not pass `phone_number_id`.
-- `VAPI_TOOL_IDS` – optional comma-separated list of tool IDs attached to assistants when `tool_ids` is not passed.
+- `VAPI_PHONE_NUMBER_ID` – optional default phone number UUID used by `cora.create_call` when you do not pass `phone_number_id`.
+- `VAPI_TOOL_IDS` – optional comma-separated list of tool UUIDs attached to assistants when `tool_ids` is not passed. Quotes and inline `#` comments are ignored.
 
 ### Setting the model
 
@@ -78,7 +78,7 @@ analysis_plan = cora.pass_fail_plan()
 assistant = cora.create_assistant(
     name="patient-123",
     system_prompt="You are a helpful care coordinator…",
-    tool_ids=["mcp-tool-id", "ba39debb-885e-415b-9ed0-3e5n33m4m"],
+    tool_ids=["ba39debb-885e-415b-9ed0-3e5f33e33e4f"],
     voice=voice,
     transcriber=transcriber,
     analysis_plan=analysis_plan,
@@ -87,12 +87,15 @@ assistant = cora.create_assistant(
 )
 ```
 
+Tool IDs must be UUIDs as provided by Vapi. If you set `VAPI_TOOL_IDS`, make sure
+the values are valid UUIDs or assistant creation will fail.
+
 ## Making Calls
 
 ```python
 call = cora.create_call(
     assistant_id=assistant.id,
-    phone_number_id="pn_abc123",
+    phone_number_id="11111111-2222-3333-4444-555555555555",
     customer="+1 (954) 320-0121",
     v=v,
 )
@@ -111,6 +114,39 @@ Passing `pandas=True` requires pandas to be installed; when enabled the helper
 returns a one-row DataFrame containing the final call payload.
 
 `TERMINAL_STATUSES` enumerates the statuses that stop polling.
+
+## Background Speech Denoising
+
+Vapi exposes a background speech denoising plan that can be set either on the
+assistant (default behavior) or per-call (override). The Cora wrappers accept
+the same `background_speech_denoising_plan` payload as the Python SDK, either
+as a dict or as the typed Vapi SDK model.
+
+```python
+assistant = cora.create_assistant(
+    name="patient-123",
+    system_prompt="You are a helpful care coordinator…",
+    voice=cora.openai_voices.nova,
+    transcriber=cora.deepgram_transcribers.custom(lang="en"),
+    background_speech_denoising_plan={
+        "smart_denoising_plan": {"enabled": True},
+        # Optional experimental knobs:
+        # "fourier_denoising_plan": {"enabled": True, "media_detection_enabled": True},
+    },
+    connector=v,
+)
+
+# Override denoising for a single call without changing the assistant.
+call = cora.create_call(
+    assistant_id=assistant.id,
+    phone_number_id="11111111-2222-3333-4444-555555555555",
+    customer="+1 (954) 320-0121",
+    background_speech_denoising_plan={
+        "smart_denoising_plan": {"enabled": True},
+    },
+    v=v,
+)
+```
 
 Need to inspect available numbers before placing a call? Use the phone number helpers:
 
@@ -139,7 +175,7 @@ assistant = cora.create_assistant(
 # Kick off a new SMS thread (send literal text)
 chat = cora.chat(
     assistant_id=assistant.id,
-    phone_number_id="pn_abc123",
+    phone_number_id="11111111-2222-3333-4444-555555555555",
     customer="+1 (954) 320-0121",
     message="Hi! Just checking in about your upcoming appointment.",
     use_llm_generated_message_for_outbound=False,  # deliver message verbatim

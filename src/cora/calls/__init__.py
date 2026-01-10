@@ -18,7 +18,21 @@ __all__ = [
 ]
 
 TERMINAL_STATUSES = {"ended", "failed", "noAnswer", "busy", "canceled"}
-DEFAULT_PHONE_NUMBER_ID = os.getenv("VAPI_PHONE_NUMBER_ID")
+UUID_PATTERN = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
+def _parse_phone_number_id(raw: Optional[str]) -> Optional[str]:
+    if raw is None:
+        return None
+    trimmed = raw.strip()
+    if not trimmed:
+        return None
+    trimmed = trimmed.split("#", 1)[0].strip()
+    trimmed = trimmed.strip("\"'")
+    return trimmed or None
+
+
+DEFAULT_PHONE_NUMBER_ID = _parse_phone_number_id(os.getenv("VAPI_PHONE_NUMBER_ID"))
 
 
 def normalize_phone(number: str) -> str:
@@ -41,24 +55,43 @@ def create_call(
     assistant_id: str,
     phone_number_id: Optional[str] = None,
     customer: Customer,
+    assistant_overrides: Optional[Dict[str, Any]] = None,
+    background_speech_denoising_plan: Optional[Any] = None,
     v: Optional[VapiConnector] = None,
 ) -> Any:
     """
     Create a Vapi call for the given assistant + phone number combination.
     Accepts customer as either a str (+1…) or {"number": "+1…"} dict.
+    Use assistant_overrides/background_speech_denoising_plan to tweak
+    assistant settings per call without changing the base assistant.
     """
-    resolved_phone_number_id = phone_number_id or DEFAULT_PHONE_NUMBER_ID
+    resolved_phone_number_id = _parse_phone_number_id(phone_number_id) or DEFAULT_PHONE_NUMBER_ID
     if not resolved_phone_number_id:
         raise ValueError(
             "phone_number_id is required; pass it explicitly or set VAPI_PHONE_NUMBER_ID in your environment."
         )
+    if not UUID_PATTERN.match(resolved_phone_number_id):
+        raise ValueError(
+            "phone_number_id must be a UUID. Update VAPI_PHONE_NUMBER_ID or pass a UUID explicitly."
+        )
     payload = _normalize_customer(customer)
     client = v or VapiConnector()
-    return client.calls.create(
-        assistant_id=assistant_id,
-        phone_number_id=resolved_phone_number_id,
-        customer=payload,
-    )
+    call_payload: Dict[str, Any] = {
+        "assistant_id": assistant_id,
+        "phone_number_id": resolved_phone_number_id,
+        "customer": payload,
+    }
+    overrides_payload: Optional[Dict[str, Any]] = None
+    if assistant_overrides is not None:
+        overrides_payload = dict(assistant_overrides)
+    if background_speech_denoising_plan is not None:
+        if overrides_payload is None:
+            overrides_payload = {}
+        overrides_payload["background_speech_denoising_plan"] = background_speech_denoising_plan
+    if overrides_payload:
+        call_payload["assistant_overrides"] = overrides_payload
+
+    return client.calls.create(**call_payload)
 
 
 def poll_until_terminal(
